@@ -5,7 +5,7 @@ on:
     branches:
     - main
     - master
-    - feature-branch
+    - feature_branch
     paths:
     - .github/workflows/semgrep.yml
   schedule:
