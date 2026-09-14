@@ -21,6 +21,10 @@ jobs:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
     container:
       image: semgrep/semgrep
+      
+    # Skip any PR created by dependabot and any check triggered by merge group
+    if: (github.actor != 'dependabot[bot]') && (github.event != 'merge_group')
+      
     steps:
     - uses: actions/checkout@v4
     - run: semgrep ci
