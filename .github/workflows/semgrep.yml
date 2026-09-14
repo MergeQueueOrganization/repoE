@@ -1,11 +1,10 @@
 on:
   workflow_dispatch: {}
   pull_request: {}
+  merge_group: {}
   push:
     branches:
     - main
-    - master
-    - feature_branch
     paths:
     - .github/workflows/semgrep.yml
   schedule:
