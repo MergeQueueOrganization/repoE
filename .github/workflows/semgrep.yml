@@ -4,27 +4,38 @@ on:
   merge_group: {}
   push:
     branches:
-    - main
+      - main
     paths:
-    - .github/workflows/semgrep.yml
+      - .github/workflows/semgrep.yml
   schedule:
-  # random HH:MM to avoid a load spike on GitHub Actions at 00:00
-  - cron: 42 23 * * *
+    # Random HH:MM to avoid a load spike at 00:00
+    - cron: "42 23 * * *"
+
 name: Semgrep
+
 jobs:
   semgrep:
     name: semgrep/ci
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
+
     env:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
     container:
       image: semgrep/semgrep
-      
-    # Skip any PR created by dependabot and any check triggered by merge group
-    if: (github.actor != 'dependabot[bot]') && (github.event != 'merge_group')
-      
+
+    # Skip PRs created by Dependabot, but allow merge-group events
+    if: github.actor != 'dependabot[bot]'
+
     steps:
-    - uses: actions/checkout@v4
-    - run: semgrep ci
+      - uses: actions/checkout@v4
+
+      - name: Set Semgrep branch for merge queue
+        if: github.event_name == 'merge_group'
+        run: echo "SEMGREP_BRANCH=main" >> "$GITHUB_ENV"
+
+      - name: Run Semgrep
+        run: semgrep ci
