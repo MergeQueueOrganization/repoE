@@ -31,11 +31,27 @@ jobs:
     if: github.actor != 'dependabot[bot]'
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set Semgrep branch for merge queue
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+    
+      - name: Trust the checked-out repository
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+    
+      - name: Configure merge-group diff scan
         if: github.event_name == 'merge_group'
-        run: echo "SEMGREP_BRANCH=main" >> "$GITHUB_ENV"
-
+        shell: sh
+        run: |
+          git fetch --no-tags origin \
+            +refs/heads/main:refs/remotes/origin/main
+    
+          BASELINE_COMMIT="$(git merge-base HEAD refs/remotes/origin/main)"
+    
+          echo "Merge-group commit: $(git rev-parse HEAD)"
+          echo "Baseline commit: ${BASELINE_COMMIT}"
+    
+          echo "SEMGREP_BASELINE_REF=${BASELINE_COMMIT}" >> "$GITHUB_ENV"
+    
       - name: Run Semgrep
         run: semgrep ci
