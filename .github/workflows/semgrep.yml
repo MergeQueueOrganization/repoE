@@ -8,7 +8,6 @@ on:
     paths:
       - .github/workflows/semgrep.yml
   schedule:
-    # Random HH:MM to avoid a load spike at 00:00
     - cron: "42 23 * * *"
 
 name: Semgrep
@@ -27,15 +26,28 @@ jobs:
     container:
       image: semgrep/semgrep
 
-    # Skip PRs created by Dependabot, but allow merge-group events
     if: github.actor != 'dependabot[bot]'
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Required so git merge-base can reliably find the common ancestor.
+          fetch-depth: 0
 
-      - name: Set Semgrep branch for merge queue
+      - name: Configure merge-group diff scan
         if: github.event_name == 'merge_group'
-        run: echo "SEMGREP_BRANCH=main" >> "$GITHUB_ENV"
+        shell: sh
+        run: |
+          git fetch --no-tags origin \
+            main:refs/remotes/origin/main
+
+          BASELINE_COMMIT="$(git merge-base HEAD refs/remotes/origin/main)"
+
+          echo "Merge-group commit: $(git rev-parse HEAD)"
+          echo "Baseline commit: ${BASELINE_COMMIT}"
+
+          echo "SEMGREP_BASELINE_REF=${BASELINE_COMMIT}" >> "$GITHUB_ENV"
 
       - name: Run Semgrep
         run: semgrep ci
